@@ -11,12 +11,13 @@ url = 'https://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geograp
 fileLocation = '/Users/nikolasgarcia/PycharmProjects/CoronaVirus/DailyDownload/'
 
 try:
-    df = pd.read_excel(url)
+    df = pd.read_excel(url, index_col='DateRep', parse_dates=True)
+    df.index = pd.to_datetime(df.index,format='%Y-%m-%d')
     logging.info('Successfully pulled down file')
     print(df.head())
     if path.exists(fileLocation.format(url[url.find('COVID'):len(url)])):
         logging.info('Moving {0} file to \n'+fileLocation.format(url[url.find('COVID'):len(url)]))
-        df.to_excel(fileLocation+'{0}'.format(url[url.find('COVID'):len(url)]))
+        df.to_excel(fileLocation+'{0}'.format(url[url.find('COVID'):len(url)]), sheet_name='Data',Index=True)
     else:
         logging.info('File already exists at {0}'.format(fileLocation))
 except FileNotFoundError as e:
