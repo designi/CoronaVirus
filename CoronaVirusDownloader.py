@@ -1,27 +1,34 @@
 from datetime import datetime
 import logging
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from os import path
 from urllib.error import HTTPError
+import sys
 
-# COVID-19 cases worldwide
+logging.getLogger().setLevel(logging.INFO)
 dt = datetime.today().strftime('%Y-%m-%d')
 url = 'https://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geographic-disbtribution-worldwide-{0}.xlsx'.format(dt)
-fileName = url[url.find('COVID'):len(url)]
 fileLocation = '/Users/nikolasgarcia/PycharmProjects/CoronaVirus/DailyDownload/'
+if path.exists(fileLocation) is False:
+    logging.error('File directory does not exist.')
+    sys.exit(1)
+fileName = url[url.find('COVID'):len(url)]
 
-try:
-    df = pd.read_excel(url, index_col='DateRep', parse_dates=True)
-    df.index = pd.to_datetime(df.index, format='%Y-%m-%d')
-    logging.info('Successfully pulled down file')
+if path.isfile(fileLocation+fileName):
+    logging.info('\nFile already exists at {0} \nLoading file from that directory.\n'.format(fileLocation))
+    df = pd.read_excel(fileLocation+fileName)
+    df['DateRep'] = pd.to_datetime(df['DateRep'], format='%Y-%m-%d')
     print(df.head())
-    if path.exists(fileLocation.format(fileName)):
-        logging.info('Moving {0} file to \n'+fileLocation.format(fileName))
-        df.to_excel(fileLocation+'{0}'.format(fileName), sheet_name='Data', index=True)
-    else:
-        logging.info('File already exists at {0}'.format(fileLocation))
-except FileNotFoundError as e:
-    logging.error('Encountered {0} while trying to download. \nCheck URL.'.format(e))
-except HTTPError as e:
-    logging.error('Encountered {0} error. Web Link {1}.'.format(e.code, e.reason))
+else:
+    try:
+        df = pd.read_excel(url)
+        df['DateRep'] = pd.to_datetime(df['DateRep'], format='%Y-%m-%d')
+        logging.info('\nSuccessfully pulled down file containing {0} records.'.format(len(df)))
+        logging.info('\nMoving {0} to \n'.format(fileName) + fileLocation)
+        df.to_excel(fileLocation + '{0}'.format(fileName), sheet_name='Data', index=True)
+    except HTTPError as e:
+        logging.error('\nEncountered {0} error. Web Link {1}.'.format(e.code, e.reason))
+    except FileNotFoundError as e:
+        logging.error('\nEncountered {0} while trying to download. \nCheck URL.'.format(e))
